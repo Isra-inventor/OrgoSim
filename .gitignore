@@ -1,0 +1,15 @@
+# Python virtual environment: rebuilt from requirements.txt, never committed
+.venv/
+
+# Python bytecode and caches
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Secrets and local config
+.env
+
+# OS / editor noise
+.DS_Store
+.vscode/
+.idea/
