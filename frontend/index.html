@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OrgoSim</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #f4f5f7; color: #1d2330; }
+    header { padding: 12px 20px; background: #1d2330; color: #fff; }
+    main { display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; }
+    .panel { background: #fff; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    .panel h2 { margin: 0 0 8px; font-size: 1rem; }
+    #viewer { width: 420px; height: 380px; position: relative; }
+    button { margin-top: 8px; padding: 8px 14px; font-size: 1rem; cursor: pointer; }
+    #status { margin-top: 8px; min-height: 1.2em; color: #b00020; }
+  </style>
+</head>
+<body>
+  <header><strong>OrgoSim</strong> &middot; prototype</header>
+  <main>
+    <section class="panel">
+      <h2>1. Draw a molecule</h2>
+      <div id="jsme_container"></div>
+      <button id="show">Show in 3D</button>
+      <div id="status"></div>
+    </section>
+    <section class="panel">
+      <h2>2. Explore it in 3D</h2>
+      <div id="viewer"></div>
+    </section>
+  </main>
+
+  <script src="vendor/3dmol/3Dmol-min.js"></script>
+  <script src="vendor/jsme/jsme.nocache.js"></script>
+  <script>
+    let jsmeApplet = null;
+    const viewer = $3Dmol.createViewer("viewer", { backgroundColor: "white" });
+    const status = document.getElementById("status");
+
+    // JSME calls this function by name once it has finished loading.
+    function jsmeOnLoad() {
+      jsmeApplet = new JSApplet.JSME("jsme_container", "420px", "380px");
+    }
+
+    async function showMolecule() {
+      status.textContent = "";
+      const smiles = jsmeApplet ? jsmeApplet.smiles() : "";
+      if (!smiles) {
+        status.textContent = "Draw a molecule first.";
+        return;
+      }
+      const response = await fetch("/api/molecule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ smiles }),
+      });
+      if (!response.ok) {
+        status.textContent = "Could not build that molecule.";
+        return;
+      }
+      const { molblock } = await response.json();
+      viewer.clear();
+      viewer.addModel(molblock, "sdf");
+      viewer.setStyle({}, { stick: {} });
+      viewer.zoomTo();
+      viewer.render();
+    }
+
+    document.getElementById("show").addEventListener("click", showMolecule);
+  </script>
+</body>
+</html>
